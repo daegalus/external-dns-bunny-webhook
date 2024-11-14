@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/puzpuzpuz/xsync/v3"
+	"github.com/samber/lo"
 	"github.com/samber/oops"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
@@ -119,6 +120,12 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 		return nil
 	}
 
+	// If we are in dry-run mode, we can skip the creation of endpoints and
+	// only log the changes that would have been made.
+	if p.Options.DryRun {
+		return p.applyChangesDryRun(ctx, changes)
+	}
+
 	err := p.createEndpoints(ctx, changes.Create)
 	if err != nil {
 		slog.Error("Failed to create endpoints",
@@ -164,6 +171,117 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 			slog.Any("error", err))
 
 		return errs.Wrapf(err, "failed to apply updates")
+	}
+
+	return nil
+}
+
+func (p *Provider) applyChangesDryRun(ctx context.Context, changes *plan.Changes) error {
+	errs := oops.In("Provider").
+		With("creates", len(changes.Create)).
+		With("deletes", len(changes.Delete)).
+		With("updates", len(changes.UpdateNew)).
+		Span("applyChangesDryRun")
+
+	if changes == nil || !changes.HasChanges() {
+		slog.Debug("DRY RUN: Skipping request to apply changes because no changes are present")
+		return nil
+	}
+
+	for _, ep := range changes.Create {
+		slog.InfoContext(ctx, "DRY RUN: Create record",
+			slog.Group("record",
+				slog.Any("name", ep.DNSName),
+				slog.Any("type", ep.RecordType),
+				slog.Any("value", ep.Targets),
+				slog.Any("ttl", ep.RecordTTL),
+			))
+	}
+
+	// If we have no deletions or updates, we can return early to avoid making a (potentially)
+	// expensive call to the Bunny.net API.
+	if len(changes.Delete) == 0 && len(changes.UpdateOld) == 0 {
+		return nil
+	}
+
+	var dnsNames []string
+	for _, ep := range changes.Delete {
+		dnsNames = append(dnsNames, ep.DNSName)
+	}
+
+	for _, ep := range changes.UpdateOld {
+		dnsNames = append(dnsNames, ep.DNSName)
+	}
+
+	tuples, err := p.fetchIdentifiers(ctx, dnsNames)
+	if err != nil {
+		slog.Error("Failed to fetch identifiers",
+			slog.Any("error", err))
+
+		return errs.Wrapf(err, "failed to fetch identifiers")
+	}
+
+	for _, ep := range changes.Delete {
+		tuple, ok := tuples[ep.DNSName]
+		if !ok {
+			slog.InfoContext(ctx, "DRY RUN: Delete record (would skip, not found in Bunny API)",
+				slog.Group("record",
+					slog.String("name", ep.DNSName),
+					slog.String("type", ep.RecordType),
+					slog.String("value", lo.FirstOr(ep.Targets, "")),
+					slog.Int("ttl", int(ep.RecordTTL)),
+				))
+
+			continue
+		}
+
+		slog.InfoContext(ctx, "DRY RUN: Delete record",
+			slog.Int64("zone_id", tuple.ZoneID),
+			slog.Group("record",
+				slog.Int64("id", tuple.RecordID),
+				slog.String("name", ep.DNSName),
+				slog.String("type", ep.RecordType),
+				slog.String("value", lo.FirstOr(ep.Targets, "")),
+				slog.Int("ttl", int(ep.RecordTTL)),
+			))
+	}
+
+	for _, ep := range changes.UpdateOld {
+		tuple, ok := tuples[ep.DNSName]
+		if !ok {
+			slog.InfoContext(ctx, "DRY RUN: Update record (would skip, not found in Bunny API)",
+				slog.Group("current",
+					slog.String("name", ep.DNSName),
+					slog.String("type", ep.RecordType),
+					slog.String("value", lo.FirstOr(ep.Targets, "")),
+					slog.Int("ttl", int(ep.RecordTTL)),
+				))
+
+			continue
+		}
+
+		var new *endpoint.Endpoint
+		for _, n := range changes.UpdateNew {
+			if n.DNSName == ep.DNSName && n.RecordType == ep.RecordType {
+				new = n
+				break
+			}
+		}
+
+		slog.InfoContext(ctx, "DRY RUN: Update record",
+			slog.Int64("zone_id", tuple.ZoneID),
+			slog.Group("current",
+				slog.Int64("id", tuple.RecordID),
+				slog.Any("name", ep.DNSName),
+				slog.Any("type", ep.RecordType),
+				slog.Any("value", ep.Targets),
+				slog.Any("ttl", ep.RecordTTL),
+			),
+			slog.Group("updated",
+				slog.Int64("id", tuple.RecordID),
+				slog.Any("value", new.Targets),
+				slog.Any("ttl", new.RecordTTL),
+			))
 	}
 
 	return nil
