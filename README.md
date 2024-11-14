@@ -33,7 +33,7 @@ provider:
   webhook:
     image:
       repository: ghcr.io/contain-labs/external-dns-bunny-webhook
-      tag: v0.2.0
+      tag: v0.3.0
     env:
       - name: BUNNY_API_KEY
         valueFrom:
