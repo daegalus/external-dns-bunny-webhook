@@ -1,7 +1,6 @@
 package bunny
 
 import (
-	"fmt"
 	"strconv"
 
 	"sigs.k8s.io/external-dns/endpoint"
@@ -26,7 +25,7 @@ func providerSpecificOptionsFromEndpoint(e *endpoint.Endpoint) (providerSpecific
 		var err error
 		opts.Disabled, err = strconv.ParseBool(disabled)
 		if err != nil {
-			return opts, fmt.Errorf("disabled %s is not parseable as a boolean: %w", disabled, err)
+			opts.Disabled = false
 		}
 	}
 
@@ -38,7 +37,7 @@ func providerSpecificOptionsFromEndpoint(e *endpoint.Endpoint) (providerSpecific
 		var err error
 		opts.Weight, err = strconv.Atoi(weight)
 		if err != nil {
-			return opts, fmt.Errorf("weight %s is not parseable as an integer: %w", weight, err)
+			opts.Weight = 100
 		}
 
 		if opts.Weight < 1 {
