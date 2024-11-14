@@ -42,8 +42,8 @@ provider:
             key: api-key
 ```
 
-To deploy the provider using the Helm chart, add the repository and install the chart. You can skip this step if you
-already have the repository added.
+To deploy the provider using the Helm chart, add the repository. You can skip this step if you already have the
+repository added.
 
 ```shell
 helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/
