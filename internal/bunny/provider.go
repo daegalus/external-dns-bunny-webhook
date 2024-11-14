@@ -376,6 +376,7 @@ func (p *Provider) createEndpoints(ctx context.Context, creates []*endpoint.Endp
 			TTLSeconds:  int(create.RecordTTL),
 			MonitorType: opts.MonitorType,
 			Weight:      opts.Weight,
+			Disabled:    opts.Disabled,
 		}
 
 		slog.Debug("Creating Record.",
@@ -388,6 +389,7 @@ func (p *Provider) createEndpoints(ctx context.Context, creates []*endpoint.Endp
 				slog.Int("ttl", record.TTLSeconds),
 				slog.String("monitor_type", record.MonitorType.String()),
 				slog.Int("weight", record.Weight),
+				slog.Bool("disabled", record.Disabled),
 			),
 		)
 
@@ -402,6 +404,7 @@ func (p *Provider) createEndpoints(ctx context.Context, creates []*endpoint.Endp
 					slog.Int("ttl", record.TTLSeconds),
 					slog.String("monitor_type", record.MonitorType.String()),
 					slog.Int("weight", record.Weight),
+					slog.Bool("disabled", record.Disabled),
 				))
 
 			return err
@@ -418,6 +421,7 @@ func (p *Provider) createEndpoints(ctx context.Context, creates []*endpoint.Endp
 				slog.Int("ttl", record.TTLSeconds),
 				slog.String("monitor_type", record.MonitorType.String()),
 				slog.Int("weight", record.Weight),
+				slog.Bool("disabled", record.Disabled),
 			))
 	}
 
@@ -442,6 +446,7 @@ func (p *Provider) updateEndpoints(ctx context.Context, identifiers map[string]i
 			Value:       update.Targets[0],
 			MonitorType: opts.MonitorType,
 			Weight:      opts.Weight,
+			Disabled:    opts.Disabled,
 		}
 
 		err = p.client.UpdateRecord(ctx, tuple.ZoneID, tuple.RecordID, record)
@@ -458,6 +463,7 @@ func (p *Provider) updateEndpoints(ctx context.Context, identifiers map[string]i
 				slog.Int("ttl", record.TTLSeconds),
 				slog.String("monitor_type", record.MonitorType.String()),
 				slog.Int("weight", record.Weight),
+				slog.Bool("disabled", record.Disabled),
 			))
 	}
 
@@ -491,6 +497,7 @@ func (p *Provider) deleteEndpoints(ctx context.Context, identifiers map[string]i
 				slog.Int("ttl", int(deletion.RecordTTL)),
 				slog.String("monitor_type", opts.MonitorType.String()),
 				slog.Int("weight", opts.Weight),
+				slog.Bool("disabled", opts.Disabled),
 			))
 
 	}

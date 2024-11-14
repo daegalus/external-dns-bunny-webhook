@@ -78,6 +78,12 @@ The provider can be configured using the following environment variables:
 
 The following annotations may be added to sources to control behavior of the DNS records created by this provider:
 
+### `external-dns.alpha.kubernetes.io/webhook-bunny-disabled`
+
+If set to `true`, the DNS record will be managed but set to disabled in the Bunny API. This annotation is optional
+and will default to `false` if not provided. Disabling a record will cause it to not respond to DNS queries,
+but will still be managed by the provider and visible in the Bunny.net dashboard.
+
 ### `external-dns.alpha.kubernetes.io/webhook-bunny-monitor-type`
 
 The monitor type to use for the DNS record. Valid values are `none` (default), `http`, and `ping`. This
