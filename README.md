@@ -31,6 +31,9 @@ namespace: external-dns
 provider:
   name: webhook
   webhook:
+    image:
+      repository: ghcr.io/contain-labs/external-dns-bunny-webhook
+      tag: v0.1.0
     env:
       - name: BUNNY_API_KEY
         valueFrom:
