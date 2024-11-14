@@ -13,6 +13,46 @@ This provider is not officially supported by [Bunny.net](https://bunny.net), but
 for the community. If you encounter any issues, please open an issue on this repository. If you have any questions
 about Bunny.net, please reach out to their support team.
 
+## Deployment
+
+You can deploy the provider using any Kubernetes deployment method, such as Helm or kubectl. Examples for the official
+external-dns Helm chart are provided below.
+
+### External DNS Helm Chart
+
+The default configuration is designed to work seamlessly with the official ExternalDNS Helm chart. Be sure to create the
+`external-dns-bunny-secret` secret with the `api-key` key containing your Bunny.net API key or modify the configuration
+to use a different secret or method of providing the API key.
+
+The values file should look similar to the following:
+
+```yaml
+namespace: external-dns
+provider:
+  name: webhook
+  webhook:
+    env:
+      - name: BUNNY_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: external-dns-bunny-secret
+            key: api-key
+```
+
+To deploy the provider using the Helm chart, add the repository and install the chart. You can skip this step if you
+already have the repository added.
+
+```shell
+helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/
+```
+
+Once the repository is added, install the chart with the values file.
+
+```shell
+helm upgrade --install external-dns external-dns/external-dns --version 1.15.0
+```
+
+Additional configuration options are available below and may be set using environment variables.
 
 ## Configuration
 
