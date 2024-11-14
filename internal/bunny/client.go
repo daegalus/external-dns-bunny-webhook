@@ -101,10 +101,13 @@ func (c *BunnyClient) ListZones(ctx context.Context, r ListZonesRequest) (*ListZ
 }
 
 type CreateRecordRequest struct {
-	Type       RecordType `json:"Type"`
-	TTLSeconds int        `json:"Ttl"`
-	Value      string     `json:"Value"`
-	Name       string     `json:"Name"`
+	Type        RecordType  `json:"Type"`
+	TTLSeconds  int         `json:"Ttl"`
+	Value       string      `json:"Value"`
+	Name        string      `json:"Name"`
+	MonitorType MonitorType `json:"MonitorType"`
+	Weight      int         `json:"Weight"`
+	Disabled    bool        `json:"Disabled"`
 }
 
 func (c *BunnyClient) CreateRecord(ctx context.Context, zoneID string, r CreateRecordRequest) (*Record, error) {
@@ -113,11 +116,14 @@ func (c *BunnyClient) CreateRecord(ctx context.Context, zoneID string, r CreateR
 	}
 
 	errs := oops.In("BunnyClient").
-		With("zoneID", zoneID).
+		With("zone_id", zoneID).
 		With("type", r.Type).
 		With("ttl", r.TTLSeconds).
 		With("value", r.Value).
 		With("name", r.Name).
+		With("monitor_type", r.MonitorType).
+		With("weight", r.Weight).
+		With("disabled", r.Disabled).
 		Span("CreateRecord")
 
 	req, err := c.createRequestWithBody(ctx, http.MethodPut, fmt.Sprintf("/dnszone/%s/records", zoneID), r)
@@ -170,8 +176,11 @@ func (c *BunnyClient) DeleteRecord(ctx context.Context, zoneID int64, recordID i
 }
 
 type UpdateRecordRequest struct {
-	TTLSeconds int    `json:"Ttl"`
-	Value      string `json:"Value"`
+	TTLSeconds  int         `json:"Ttl"`
+	Value       string      `json:"Value"`
+	MonitorType MonitorType `json:"MonitorType"`
+	Weight      int         `json:"Weight"`
+	Disabled    bool        `json:"Disabled"`
 }
 
 func (c *BunnyClient) UpdateRecord(ctx context.Context, zoneID int64, recordID int64, r UpdateRecordRequest) error {
@@ -180,6 +189,9 @@ func (c *BunnyClient) UpdateRecord(ctx context.Context, zoneID int64, recordID i
 		With("recordID", recordID).
 		With("updatedTTL", r.TTLSeconds).
 		With("updatedValue", r.Value).
+		With("updatedMonitorType", r.MonitorType).
+		With("updatedWeight", r.Weight).
+		With("updatedDisabled", r.Disabled).
 		Span("UpdateRecord")
 
 	req, err := c.createRequestWithBody(ctx, http.MethodPost, fmt.Sprintf("/dnszone/%d/records/%d", zoneID, recordID), r)

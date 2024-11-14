@@ -364,11 +364,19 @@ func (p *Provider) createEndpoints(ctx context.Context, creates []*endpoint.Endp
 			return errs.Errorf("failed to extract components for %q", create.DNSName)
 		}
 
+		opts, err := providerSpecificOptionsFromEndpoint(create)
+		if err != nil {
+			return errs.Wrapf(err, "failed to create record %q", create.DNSName)
+		}
+
 		record := CreateRecordRequest{
-			Name:       recordName,
-			Type:       RecordTypeFromString(create.RecordType),
-			Value:      create.Targets[0],
-			TTLSeconds: int(create.RecordTTL),
+			Name:        recordName,
+			Type:        RecordTypeFromString(create.RecordType),
+			Value:       create.Targets[0],
+			TTLSeconds:  int(create.RecordTTL),
+			MonitorType: opts.MonitorType,
+			Weight:      opts.Weight,
+			Disabled:    opts.Disabled,
 		}
 
 		slog.Debug("Creating Record.",
@@ -378,7 +386,12 @@ func (p *Provider) createEndpoints(ctx context.Context, creates []*endpoint.Endp
 				slog.String("name", record.Name),
 				slog.String("type", record.Type.String()),
 				slog.String("value", record.Value),
-				slog.Int("ttl", record.TTLSeconds)))
+				slog.Int("ttl", record.TTLSeconds),
+				slog.String("monitor_type", record.MonitorType.String()),
+				slog.Int("weight", record.Weight),
+				slog.Bool("disabled", record.Disabled),
+			),
+		)
 
 		created, err := p.client.CreateRecord(ctx, strconv.FormatInt(bunnyZoneID, 10), record)
 		if err != nil {
@@ -388,7 +401,11 @@ func (p *Provider) createEndpoints(ctx context.Context, creates []*endpoint.Endp
 					slog.String("name", record.Name),
 					slog.String("type", record.Type.String()),
 					slog.String("value", record.Value),
-					slog.Int("ttl", record.TTLSeconds)))
+					slog.Int("ttl", record.TTLSeconds),
+					slog.String("monitor_type", record.MonitorType.String()),
+					slog.Int("weight", record.Weight),
+					slog.Bool("disabled", record.Disabled),
+				))
 
 			return err
 		}
@@ -401,7 +418,11 @@ func (p *Provider) createEndpoints(ctx context.Context, creates []*endpoint.Endp
 				slog.String("name", record.Name),
 				slog.String("type", record.Type.String()),
 				slog.String("value", record.Value),
-				slog.Int("ttl", record.TTLSeconds)))
+				slog.Int("ttl", record.TTLSeconds),
+				slog.String("monitor_type", record.MonitorType.String()),
+				slog.Int("weight", record.Weight),
+				slog.Bool("disabled", record.Disabled),
+			))
 	}
 
 	return nil
@@ -415,12 +436,20 @@ func (p *Provider) updateEndpoints(ctx context.Context, identifiers map[string]i
 			return fmt.Errorf("failed to get record identifiers for %q", update.DNSName)
 		}
 
-		record := UpdateRecordRequest{
-			TTLSeconds: int(update.RecordTTL),
-			Value:      update.Targets[0],
+		opts, err := providerSpecificOptionsFromEndpoint(update)
+		if err != nil {
+			return fmt.Errorf("failed to update record %q", update.DNSName)
 		}
 
-		err := p.client.UpdateRecord(ctx, tuple.ZoneID, tuple.RecordID, record)
+		record := UpdateRecordRequest{
+			TTLSeconds:  int(update.RecordTTL),
+			Value:       update.Targets[0],
+			MonitorType: opts.MonitorType,
+			Weight:      opts.Weight,
+			Disabled:    opts.Disabled,
+		}
+
+		err = p.client.UpdateRecord(ctx, tuple.ZoneID, tuple.RecordID, record)
 		if err != nil {
 			return err
 		}
@@ -431,7 +460,11 @@ func (p *Provider) updateEndpoints(ctx context.Context, identifiers map[string]i
 				slog.Int64("id", tuple.RecordID),
 				slog.String("name", update.DNSName),
 				slog.String("value", record.Value),
-				slog.Int("ttl", record.TTLSeconds)))
+				slog.Int("ttl", record.TTLSeconds),
+				slog.String("monitor_type", record.MonitorType.String()),
+				slog.Int("weight", record.Weight),
+				slog.Bool("disabled", record.Disabled),
+			))
 	}
 
 	return nil
@@ -444,7 +477,13 @@ func (p *Provider) deleteEndpoints(ctx context.Context, identifiers map[string]i
 			return fmt.Errorf("failed to get record identifiers for %q", deletion.DNSName)
 		}
 
-		err := p.client.DeleteRecord(ctx, tuple.ZoneID, tuple.RecordID)
+		opts, err := providerSpecificOptionsFromEndpoint(deletion)
+		if err != nil {
+			// We can ignore this error as we are deleting the record anyway and we'll always
+			// get a usable opts struct (no nil pointers).
+		}
+
+		err = p.client.DeleteRecord(ctx, tuple.ZoneID, tuple.RecordID)
 		if err != nil {
 			return err
 		}
@@ -453,7 +492,14 @@ func (p *Provider) deleteEndpoints(ctx context.Context, identifiers map[string]i
 			slog.Int64("zone_id", tuple.ZoneID),
 			slog.Group("record",
 				slog.Int64("id", tuple.RecordID),
-				slog.String("name", deletion.DNSName)))
+				slog.String("name", deletion.DNSName),
+				slog.String("value", deletion.Targets[0]),
+				slog.Int("ttl", int(deletion.RecordTTL)),
+				slog.String("monitor_type", opts.MonitorType.String()),
+				slog.Int("weight", opts.Weight),
+				slog.Bool("disabled", opts.Disabled),
+			))
+
 	}
 
 	return nil

@@ -5,10 +5,15 @@ import (
 )
 
 func recordToEndpoint(domain string, record *Record) *endpoint.Endpoint {
-	return endpoint.NewEndpointWithTTL(
+	ep := endpoint.NewEndpointWithTTL(
 		record.Name+"."+domain,
 		record.Type.String(),
 		endpoint.TTL(record.TTLSeconds),
 		record.Value,
 	)
+
+	ps := providerSpecificOptionsFromRecord(record)
+	ps.ApplyToEndpoint(ep)
+
+	return ep
 }
