@@ -62,8 +62,8 @@ github.com/rogpeppe/go-internal v1.12.0 h1:exVL4IDcn6na9z1rAb56Vxr+CgyK3nn3O+epU
 github.com/rogpeppe/go-internal v1.12.0/go.mod h1:E+RYuTGaKKdloAfM02xzb0FW3Paa99yedzYV+kq4uf4=
 github.com/samber/lo v1.47.0 h1:z7RynLwP5nbyRscyvcD043DWYoOcYRv3mV8lBeqOCLc=
 github.com/samber/lo v1.47.0/go.mod h1:RmDH9Ct32Qy3gduHQuKJ3gW1fMHAnE/fAzQuf6He5cU=
-github.com/samber/oops v1.14.1 h1:26kOy2w3PpahR7GlTEgRSIxH1UjjueGPGV1ndpQolGA=
-github.com/samber/oops v1.14.1/go.mod h1:7fxtMoVZW/AnCTSQysOO2e/aDjP/uIACoxr0eE6w3dc=
+github.com/samber/oops v1.15.0 h1:/mF33KAqA2TugU6y/tomFpK6G6mJB7g0aqRyHkaSIeg=
+github.com/samber/oops v1.15.0/go.mod h1:9LpLZkpjojEt/of7EpG5o65i/Lp23ddDvGhg2L871Ow=
 github.com/sethvargo/go-envconfig v1.1.0 h1:cWZiJxeTm7AlCvzGXrEXaSTCNgip5oJepekh/BOQuog=
 github.com/sethvargo/go-envconfig v1.1.0/go.mod h1:JLd0KFWQYzyENqnEPWWZ49i4vzZo/6nRidxI8YvGiHw=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
